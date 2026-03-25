@@ -1,41 +1,46 @@
 package storage
 
 import (
+	"maps"
+	"slices"
 	"sync"
 )
 
 type Storage interface {
+	GetAll() []*Task
 	Get(key string) *Task
 	Create(t *Task) error
 	UpdateStatus(id, status string) error
 }
 
 type storage struct {
-	m        map[string]*Task
-	mutexMap map[string]*sync.Mutex
-	mutex    sync.Mutex
+	m     map[string]*Task
+	mutex sync.Mutex
 }
 
 func NewStorage() Storage {
 	return &storage{
-		m:        make(map[string]*Task),
-		mutexMap: make(map[string]*sync.Mutex),
-		mutex:    sync.Mutex{},
+		m: make(map[string]*Task),
 	}
 }
 
 func (s *storage) Get(key string) *Task {
-	m := s.getOrCreateMutex(key)
-	m.Lock()
-	defer m.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	return s.m[key]
 }
 
+func (s *storage) GetAll() []*Task {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	return slices.Collect(maps.Values(s.m))
+}
+
 func (s *storage) Create(t *Task) error {
-	m := s.getOrCreateMutex(t.Id)
-	m.Lock()
-	defer m.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	s.m[t.Id] = t
 
@@ -43,25 +48,10 @@ func (s *storage) Create(t *Task) error {
 }
 
 func (s *storage) UpdateStatus(id, status string) error {
-	m := s.getOrCreateMutex(id)
-	m.Lock()
-	defer m.Unlock()
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	s.m[id].Status = status
 
 	return nil
-}
-
-func (s *storage) getOrCreateMutex(key string) *sync.Mutex {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
-	if m, ok := s.mutexMap[key]; ok {
-		return m
-	}
-
-	m := &sync.Mutex{}
-	s.mutexMap[key] = m
-
-	return m
 }

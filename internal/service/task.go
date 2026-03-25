@@ -11,6 +11,7 @@ import (
 )
 
 type TasksService interface {
+	GetAll() []*models.Task
 	Get(key string) *models.Task
 	Queue(t *models.Task) (string, error)
 }
@@ -27,6 +28,21 @@ func NewTasksService(s storage.Storage, validator Validator, worker worker.Worke
 		validator: validator,
 		worker:    worker,
 	}
+}
+
+func (s *service) GetAll() []*models.Task {
+	all := s.storage.GetAll()
+	result := make([]*models.Task, 0, len(all))
+
+	for _, item := range all {
+		result = append(result, &models.Task{
+			Id:     item.Id,
+			Status: item.Status,
+			Value:  item.Value,
+		})
+	}
+
+	return result
 }
 
 func (s *service) Get(key string) *models.Task {

@@ -27,6 +27,9 @@ func main() {
 	tasksController.MapRoutes(router)
 	fmt.Println("Routes Mapped")
 
-	fmt.Println("Server Started! Address: http://localhost:5123")
-	http.ListenAndServe(":5123", router)
+	fmt.Println("Server Started! Address: http://localhost:5124")
+	err := http.ListenAndServe(":5124", router)
+	if err != nil {
+		fmt.Printf("ERROR = %s\n", err.Error())
+	}
 }
