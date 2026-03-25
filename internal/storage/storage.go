@@ -1,8 +1,6 @@
 package storage
 
 import (
-	"maps"
-	"slices"
 	"sync"
 )
 
@@ -28,14 +26,23 @@ func (s *storage) Get(key string) *Task {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	return s.m[key]
+	t := s.m[key]
+	cp := *t
+
+	return &cp
 }
 
 func (s *storage) GetAll() []*Task {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
-	return slices.Collect(maps.Values(s.m))
+	result := make([]*Task, 0, len(s.m))
+	for _, t := range s.m {
+		cp := *t
+		result = append(result, &cp)
+	}
+
+	return result
 }
 
 func (s *storage) Create(t *Task) error {
