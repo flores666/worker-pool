@@ -1,12 +1,12 @@
-package validator
+package service
 
 import (
 	"errors"
-	"worker-pool/internal/tasks"
+	"worker-pool/internal/models"
 )
 
 type Validator interface {
-	Validate(t tasks.Task) error
+	Validate(t *models.Task) error
 }
 
 type validator struct {
@@ -16,13 +16,9 @@ func NewValidator() Validator {
 	return &validator{}
 }
 
-func (v *validator) Validate(t tasks.Task) error {
+func (v *validator) Validate(t *models.Task) error {
 	if t.Id == "" {
 		return errors.New("Empty Id")
-	}
-
-	if t.Value == "" {
-		return errors.New("Empty Value")
 	}
 
 	return nil

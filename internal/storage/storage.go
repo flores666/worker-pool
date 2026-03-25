@@ -2,45 +2,54 @@ package storage
 
 import (
 	"sync"
-	"worker-pool/internal/tasks"
-
-	"github.com/google/uuid"
 )
 
 type Storage interface {
-	Get(key string) *tasks.Task
-	Create(t *tasks.Task)
+	Get(key string) *Task
+	Create(t *Task) error
+	UpdateStatus(id, status string) error
 }
 
 type storage struct {
-	m        map[string]*tasks.Task
+	m        map[string]*Task
 	mutexMap map[string]*sync.Mutex
 	mutex    sync.Mutex
 }
 
 func NewStorage() Storage {
 	return &storage{
-		m:        make(map[string]*tasks.Task),
+		m:        make(map[string]*Task),
 		mutexMap: make(map[string]*sync.Mutex),
 		mutex:    sync.Mutex{},
 	}
 }
 
-func (s *storage) Get(key string) *tasks.Task {
-	/*m := s.getOrCreateMutex(key)
+func (s *storage) Get(key string) *Task {
+	m := s.getOrCreateMutex(key)
 	m.Lock()
-	defer m.Unlock()*/
+	defer m.Unlock()
 
 	return s.m[key]
 }
 
-func (s *storage) Create(t *tasks.Task) {
-	if t.Id == "" {
-		key := uuid.New().String()
-		t.Id = key
-	}
+func (s *storage) Create(t *Task) error {
+	m := s.getOrCreateMutex(t.Id)
+	m.Lock()
+	defer m.Unlock()
 
 	s.m[t.Id] = t
+
+	return nil
+}
+
+func (s *storage) UpdateStatus(id, status string) error {
+	m := s.getOrCreateMutex(id)
+	m.Lock()
+	defer m.Unlock()
+
+	s.m[id].Status = status
+
+	return nil
 }
 
 func (s *storage) getOrCreateMutex(key string) *sync.Mutex {

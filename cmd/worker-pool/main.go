@@ -1,19 +1,32 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
-	"worker-pool/internal/controllers"
+	"worker-pool/internal/handlers"
+	"worker-pool/internal/service"
 	"worker-pool/internal/storage"
-	"worker-pool/internal/validator"
+	"worker-pool/internal/worker"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
 )
 
 func main() {
 	router := chi.NewRouter()
+	fmt.Println("Router Created")
 
-	tasksController := controllers.NewController(storage.NewStorage(), validator.NewValidator())
+	router.Use(middleware.RequestID)
+	router.Use(middleware.Recoverer)
+	router.Use(middleware.URLFormat)
+
+	storage := storage.NewStorage()
+	tasksController := handlers.NewController(service.NewTasksService(storage, service.NewValidator(), worker.NewWorker(storage)))
+	fmt.Println("Api Handlers Registered")
+
 	tasksController.MapRoutes(router)
+	fmt.Println("Routes Mapped")
 
-	http.ListenAndServe(":3000", router)
+	fmt.Println("Server Started! Address: http://localhost:5123")
+	http.ListenAndServe(":5123", router)
 }
